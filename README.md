@@ -1,7 +1,7 @@
 # Taskbar Auto-Hide Script
 
 ## Overview
-This PowerShell script automatically controls the auto-hide feature of the Windows taskbar based on the number of connected monitors. The taskbar will be set to **auto-hide** when an external monitor is connected and will remain **always visible** when only the internal monitor is in use.
+This PowerShell script automatically controls the auto-hide feature of the Windows taskbar based on the number of connected monitors. The taskbar will be set to **auto-hide** when only the **internal monitor** is connected (useful for laptops with limited screen space) and will remain **always visible** when an **external monitor** is detected.
 
 ## What the Script Does
 - **Detects the number of active monitors** (internal and external).
@@ -9,9 +9,9 @@ This PowerShell script automatically controls the auto-hide feature of the Windo
 - Restarts **Explorer** to immediately apply the changes to the taskbar.
 
 ### Key Function:
-- When **only the internal monitor** is connected, the taskbar auto-hide is **disabled**.
-- When an **external monitor** is detected, the taskbar auto-hide is **enabled**.
-  
+- When **only the internal monitor** is connected, the taskbar auto-hide is **enabled** (to save screen space).
+- When an **external monitor** is connected, the taskbar auto-hide is **disabled** (since more screen space is available).
+
 ## Test Code
 Some useful test code is provided in the `test.md` file to help you verify the behavior of the script.
 
