@@ -1,10 +1,11 @@
 # Define registry path
 $path = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3'
 
-# Check if StuckRects3 exists (some Windows versions use StuckRects2)
+# First, let's check if StuckRects3 exists (some Windows versions use StuckRects2)
 if (-not (Test-Path $path)) {
     $path = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StuckRects2'
     if (-not (Test-Path $path)) {
+        Write-Host "Could not find StuckRects registry key. This might be due to a different Windows version."
         exit
     }
 }
@@ -15,13 +16,16 @@ $settings = (Get-ItemProperty -Path $path).Settings
 # Ensure we are working with a mutable array
 $settingsArray = [byte[]]$settings.Clone()
 
-# Modify settings for auto-hide (3 = Auto-hide taskbar)
+# Modify settings for auto-hide
+# The taskbar auto-hide flag is at offset 8
+# 1 = Always show taskbar
+# 3 = Auto-hide taskbar
 $settingsArray[8] = 3
 
 # Apply changes
 Set-ItemProperty -Path $path -Name Settings -Value $settingsArray
 
-# Set the AppVisibility registry key which affects taskbar behavior
+# Also set the AppVisibility registry key which affects taskbar behavior
 $appVisibilityPath = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
 Set-ItemProperty -Path $appVisibilityPath -Name 'TaskbarAutoHideInTabletMode' -Value 0 -Type DWord
 Set-ItemProperty -Path $appVisibilityPath -Name 'TaskbarGlomLevel' -Value 0 -Type DWord
@@ -43,11 +47,15 @@ Start-Sleep -Milliseconds 500
 [System.Windows.Forms.SendKeys]::SendWait('{ESC}')
 '@
 
-# Run the notification cleanup in a separate PowerShell process
+# Run the notification cleanup in a separate PowerShell process to avoid permission issues
 $encodedCommand = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($cleanNotificationDB))
 Start-Process powershell.exe -ArgumentList "-EncodedCommand $encodedCommand" -NoNewWindow -Wait
 
-# Restart Explorer to apply all changes
+# Finally, restart Explorer completely to apply all changes
+Write-Host "Restarting Explorer to apply taskbar changes..."
 Stop-Process -Name explorer -Force
 Start-Sleep -Seconds 2
 Start-Process explorer.exe
+
+Write-Host "Changes applied. Your taskbar should now auto-hide properly."
+Write-Host "If you still have issues, try checking if any applications are causing notifications that prevent hiding."
