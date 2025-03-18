@@ -13,9 +13,6 @@ This PowerShell script automatically controls the auto-hide feature of the Windo
 - When an **external monitor** is connected, the taskbar auto-hide is **disabled** (since more screen space is available).
 - When **multiple monitors** are connected, the taskbar auto-hide is **disabled** (since more screen space is available).
 
-## Test Code
-Some useful test code is provided in the `test.md` file to help you verify the behavior of the script.
-
 ## Startup Method : Adding the Script to Startup Folder
 
 1. **Save the script (`Set-TaskbarAutoHide.ps1`)** to your desired location (e.g., `C:\misc\TaskbarAutoHide\Set-TaskbarAutoHide.ps1`).
