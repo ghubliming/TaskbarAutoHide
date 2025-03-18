@@ -1,12 +1,38 @@
 # Taskbar Auto-Hide Script
 
-## Overview
-This PowerShell script automatically controls the auto-hide feature of the Windows taskbar based on the number of connected monitors. The taskbar will be set to **auto-hide** when only the **internal monitor** is connected (useful for laptops with limited screen space) and will remain **always visible** when an **external monitor** is detected.
+This PowerShell script automatically manages Windows taskbar auto-hide settings based on your monitor configuration.
 
-### Key Function:
-- When **only the internal monitor** is connected, the taskbar auto-hide is **enabled** (to save screen space).
-- When an **external monitor** is connected, the taskbar auto-hide is **disabled** (since more screen space is available).
-- When **multiple monitors** are connected, the taskbar auto-hide is **disabled** (since more screen space is available).
+## Features
+
+- Detects internal (built-in) and external monitors
+- Applies taskbar auto-hide settings based on monitor configuration:
+  - When only using internal monitor: Auto-hide enabled (saves screen space)
+  - When external monitor(s) connected: Auto-hide disabled (more screen space available)
+  - When multiple monitors connected: Auto-hide disabled (more screen space available)
+- Works with different Windows versions (checks for both StuckRects3 and StuckRects2 registry keys)
+- Includes notification area cleanup to prevent auto-hide issues
+- Provides helpful console output about detected monitors and applied settings
+
+## Requirements
+
+- Windows 10 or Windows 11
+- PowerShell 5.1 or higher
+- Administrator privileges (for registry modifications)
+
+## Installation
+
+1. Save the script as `TaskbarAutoHideManager.ps1` to a location of your choice
+2. Optionally, create a shortcut to run the script
+
+## Usage
+
+### Basic Usage
+
+Right-click the script and select "Run with PowerShell" or run it from a PowerShell prompt:
+
+```powershell
+.\TaskbarAutoHideManager.ps1
+```
 
 ## Startup Method : Adding the Script to Startup Folder
 
@@ -25,4 +51,27 @@ This PowerShell script automatically controls the auto-hide feature of the Windo
    - Move the **shortcut** (not the `.ps1` file) into the **Startup folder**.
 
 With this setup, the script will **automatically run** each time you log in, ensuring the taskbar behavior is adjusted based on the connected monitors. The shortcut is ready to use and can be run manually anytime as well.
+
+
+## Troubleshooting
+
+If the script doesn't work as expected:
+
+1. Run PowerShell as Administrator
+2. Check if you have execution policy restrictions:
+   ```powershell
+   Get-ExecutionPolicy
+   ```
+3. If restricted, try running with bypass:
+   ```powershell
+   powershell.exe -ExecutionPolicy Bypass -File "path\to\TaskbarAutoHideManager.ps1"
+   ```
+
+## Contributing
+
+Feel free to submit issues or pull requests to improve this script.
+
+## License
+
+See the [LICENSE](LICENSE) file for details.
 
