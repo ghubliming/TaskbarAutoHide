@@ -11,7 +11,7 @@ This PowerShell script automatically controls the auto-hide feature of the Windo
 ### Key Function:
 - When **only the internal monitor** is connected, the taskbar auto-hide is **enabled** (to save screen space).
 - When an **external monitor** is connected, the taskbar auto-hide is **disabled** (since more screen space is available).
-- When **multiple monitos** are connected, the taskbar auto-hide is **disabled** (since more screen space is available).
+- When **multiple monitors** are connected, the taskbar auto-hide is **disabled** (since more screen space is available).
 
 ## Test Code
 Some useful test code is provided in the `test.md` file to help you verify the behavior of the script.
