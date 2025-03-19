@@ -1,107 +1,100 @@
-param(
-    [switch]$ForceInternal = $false
-)
+param([switch]$ForceInternal = $false)
 
-# Define registry path
-$path = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3'
-# Check if StuckRects3 exists (some Windows versions use StuckRects2)
-if (-not (Test-Path $path)) {
-    $path = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StuckRects2'
-    if (-not (Test-Path $path)) {
-        Write-Host "Neither StuckRects3 nor StuckRects2 registry keys found. Exiting."
-        exit
-    }
-}
-
-# Simple function that assumes laptop internal monitor
-function Get-MonitorInformation {
-    # Force internal monitor mode
-    if ($ForceInternal) {
-        Write-Host "Forced internal monitor mode"
-        return @{
-            TotalMonitors = 1
-            InternalMonitors = 1
-            ExternalMonitors = 0
+function Get-TaskbarRegistryPath {
+    $paths = @(
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3',
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StuckRects2'
+    )
+    
+    foreach ($path in $paths) {
+        if (Test-Path $path) {
+            return $path
         }
     }
     
-    # Try a simple method to detect display count
+    throw "Taskbar registry path not found"
+}
+
+function Test-ExternalDisplay {
+    if ($ForceInternal) { return $false }
+    
     try {
+        # Try WMI method first (more reliable)
+        $monitors = Get-WmiObject -Namespace root\wmi -Class WmiMonitorConnectionParams -ErrorAction Stop
+        foreach ($monitor in $monitors) {
+            # Check for external connections: VGA, DVI, HDMI, DisplayPort, etc.
+            if ($monitor.VideoOutputTechnology -in @(0, 4, 5, 9, 10)) {
+                return $true
+            }
+        }
+        
+        # Fallback to screen count method
         Add-Type -AssemblyName System.Windows.Forms
-        $screens = [System.Windows.Forms.Screen]::AllScreens
-        $screenCount = $screens.Count
-        
-        # Check if laptop
-        $isLaptop = $false
+        return ([System.Windows.Forms.Screen]::AllScreens.Count -gt 1)
+    }
+    catch {
+        Write-Warning "Error detecting displays: $_"
+        # Fallback to screen count method
         try {
-            $battery = Get-WmiObject -Class Win32_Battery
-            if ($battery -ne $null) {
-                $isLaptop = $true
-            }
-        } catch {
-            # Default to assuming it's a laptop
-            $isLaptop = $true
+            Add-Type -AssemblyName System.Windows.Forms
+            return ([System.Windows.Forms.Screen]::AllScreens.Count -gt 1)
         }
-        
-        if ($isLaptop -and $screenCount -eq 1) {
-            # Single screen on laptop = internal
-            return @{
-                TotalMonitors = 1
-                InternalMonitors = 1
-                ExternalMonitors = 0
-            }
-        } else {
-            # Multiple screens or desktop
-            return @{
-                TotalMonitors = $screenCount
-                InternalMonitors = if ($isLaptop) { 1 } else { 0 }
-                ExternalMonitors = if ($isLaptop) { $screenCount - 1 } else { $screenCount }
-            }
-        }
-    } catch {
-        # Fallback to safe defaults
-        Write-Host "Error in monitor detection: $_"
-        Write-Host "Falling back to default: 1 internal monitor"
-        return @{
-            TotalMonitors = 1
-            InternalMonitors = 1
-            ExternalMonitors = 0
+        catch {
+            Write-Warning "Screen detection failed: $_"
+            return $false
         }
     }
 }
 
-# Override detection with forced mode
-$monitorInfo = Get-MonitorInformation
-Write-Host "Detected $($monitorInfo.TotalMonitors) monitor(s): $($monitorInfo.InternalMonitors) internal, $($monitorInfo.ExternalMonitors) external"
+function Update-TaskbarSettings {
+    param(
+        [string]$Path,
+        [bool]$EnableAutoHide
+    )
+    
+    $settings = (Get-ItemProperty -Path $Path).Settings
+    $settingsArray = [byte[]]$settings.Clone()
+    
+    # Check current auto-hide setting (byte 8)
+    $currentAutoHide = ($settingsArray[8] -eq 3)
 
-# Determine if taskbar should auto-hide based on monitor configuration
-$enableAutoHide = $false
+    if ($currentAutoHide -eq $EnableAutoHide) {
+        Write-Host "Taskbar setting is already correct. No changes needed."
+        return
+    }
 
-# Rule 1: Only internal monitor connected - enable auto-hide
-if ($monitorInfo.TotalMonitors -eq 1 -and $monitorInfo.InternalMonitors -eq 1) {
-    $enableAutoHide = $true
-    Write-Host "Only internal monitor detected - enabling taskbar auto-hide"
+    # Set auto-hide flag
+    $settingsArray[8] = if ($EnableAutoHide) { 3 } else { 2 }
+    
+    # Make sure taskbar is visible
+    $settingsArray[12] = 1
+    
+    # Apply changes
+    Set-ItemProperty -Path $Path -Name Settings -Value $settingsArray
+
+    # Restart Explorer only if changes were made
+    Restart-Explorer
 }
-# Rule 2 & 3: External monitor connected or multiple monitors - disable auto-hide
-else {
-    $enableAutoHide = $false
-    Write-Host "External or multiple monitors detected - disabling taskbar auto-hide"
+
+function Restart-Explorer {
+    Write-Host "Restarting Explorer to apply changes..."
+    Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+    Start-Process explorer.exe
 }
 
-# Get the current settings
-$settings = (Get-ItemProperty -Path $path).Settings
-# Ensure we are working with a mutable array
-$settingsArray = [byte[]]$settings.Clone()
-
-# Modify settings for auto-hide status
-# 3 = Auto-hide taskbar, 2 = Don't auto-hide
-$settingsArray[8] = if ($enableAutoHide) { 3 } else { 2 }
-
-# Apply changes
-Set-ItemProperty -Path $path -Name Settings -Value $settingsArray
-
-# Restart Explorer to apply all changes
-Write-Host "Restarting Explorer to apply changes..."
-Stop-Process -Name explorer -Force
-Start-Sleep -Seconds 2
-Start-Process explorer.exe
+# Main script
+try {
+    $path = Get-TaskbarRegistryPath
+    $hasExternalMonitor = Test-ExternalDisplay
+    $enableAutoHide = -not $hasExternalMonitor
+    
+    Write-Host "External monitor: $hasExternalMonitor"
+    Write-Host "Auto-hide setting: $enableAutoHide"
+    
+    Update-TaskbarSettings -Path $path -EnableAutoHide $enableAutoHide
+}
+catch {
+    Write-Error "Failed to update taskbar settings: $_"
+    exit 1
+}
