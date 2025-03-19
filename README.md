@@ -9,9 +9,6 @@ This PowerShell script automatically manages Windows taskbar auto-hide settings 
   - When only using internal monitor: Auto-hide enabled (saves screen space)
   - When external monitor(s) connected: Auto-hide disabled (more screen space available)
   - When multiple monitors connected: Auto-hide disabled (more screen space available)
-- Works with different Windows versions (checks for both StuckRects3 and StuckRects2 registry keys)
-- Includes notification area cleanup to prevent auto-hide issues
-- Provides helpful console output about detected monitors and applied settings
 
 ## Requirements
 
