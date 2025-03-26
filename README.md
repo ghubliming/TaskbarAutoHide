@@ -18,7 +18,7 @@ This PowerShell script automatically manages Windows taskbar auto-hide settings 
 
 ## Installation
 
-1. Save the script as `TaskbarAutoHideManager.ps1` to a location of your choice
+1. Save the script as `Set-TaskbarAutoHide.ps1` to a location of your choice
 2. Optionally, create a shortcut to run the script
 
 ## Usage
@@ -28,7 +28,7 @@ This PowerShell script automatically manages Windows taskbar auto-hide settings 
 Right-click the script and select "Run with PowerShell" or run it from a PowerShell prompt:
 
 ```powershell
-.\TaskbarAutoHideManager.ps1
+.\Set-TaskbarAutoHide.ps1
 ```
 
 ## Startup Method : Adding the Script to Startup Folder
@@ -61,7 +61,7 @@ If the script doesn't work as expected:
    ```
 3. If restricted, try running with bypass:
    ```powershell
-   powershell.exe -ExecutionPolicy Bypass -File "path\to\TaskbarAutoHideManager.ps1"
+   powershell.exe -ExecutionPolicy Bypass -File "path\to\Set-TaskbarAutoHide.ps1"
    ```
 
 ## Contributing
